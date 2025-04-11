@@ -29,22 +29,28 @@ with app.app_context():
 def index():
     return render_template('index.html')
 
-@app.route('/register',methods=['GET','POST'])
+@app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
-        # handle request
         name = request.form['name']
         email = request.form['email']
         password = request.form['password']
 
-        new_user = User(name=name,email=email,password=password)
-        db.session.add(new_user)
-        db.session.commit()
-        return redirect('/login')
+        existing_user = User.query.filter_by(email=email).first()
+        if existing_user:
+            return render_template('register.html', error="Email already registered")
 
-
-
+        try:
+            new_user = User(name=name, email=email, password=password)
+            db.session.add(new_user)
+            db.session.commit()
+            return redirect('/login')
+        except Exception as e:
+            db.session.rollback()
+            return render_template('register.html', error="Something went wrong")
+    
     return render_template('register.html')
+
 
 @app.route('/login',methods=['GET','POST'])
 def login():
